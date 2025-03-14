@@ -13,12 +13,23 @@ export default function App() {
         <Stack.Screen
           name="Home"
           component={HomeScreen}
-          options={{ headerShown: false }} // Hide the header for a cleaner look
+          options={{ headerShown: false }} // Hide header on HomeScreen
         />
         <Stack.Screen
           name="Upload"
           component={UploadScreen}
-          options={{ title: "Plant Disease Detection" }}
+          options={{
+            title: "Plant Disease Detection",
+            headerStyle: {
+              backgroundColor: "#d5e4d9", // Light green to match the UploadScreen background
+            },
+            headerTintColor: "#000000", // Black text for contrast
+            headerTitleStyle: {
+              fontWeight: "bold",
+              fontSize: 20,
+            },
+            headerBackTitleVisible: false, // Hide the back button title
+          }}
         />
       </Stack.Navigator>
     </NavigationContainer>
