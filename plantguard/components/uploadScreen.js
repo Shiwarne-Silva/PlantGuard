@@ -12,7 +12,7 @@ import * as ImagePicker from "expo-image-picker";
 import axios from "axios";
 
 // Replace with your computer's IP or ngrok URL
-const API_URL = "http://172.27.0.14:8009/predict"; // Example: Replace with your IP or ngrok URL
+const API_URL = "http://172.20.10.2:8009/predict"; // Example: Replace with your IP or ngrok URL
 
 const UploadScreen = () => {
   const [image, setImage] = useState(null);
@@ -88,7 +88,7 @@ const UploadScreen = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Plant Disease Detection</Text>
+      <Text style={styles.title}>Potato Plant Disease Detection</Text>
 
       {/* Button to pick an image */}
       <Button title="Pick an Image" onPress={pickImage} />
@@ -132,6 +132,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#d5e4d9",
   },
   title: {
+    textAlign: "center",
     fontSize: 30,
     fontWeight: "bold",
     marginBottom: 20,

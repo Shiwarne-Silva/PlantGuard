@@ -8,6 +8,11 @@ const HomeScreen = () => {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>PlantGuard</Text>
+      <Text style={styles.body}>
+        Diagnose potato plant diseases instantly by uploading an image. Get
+        accurate predictions and recommended treatments to keep your crops
+        healthy.
+      </Text>
       <TouchableOpacity
         style={styles.button}
         onPress={() => navigation.navigate("Upload")}
@@ -32,6 +37,13 @@ const styles = StyleSheet.create({
     textShadowColor: "rgba(0, 0, 0, 0.3)", // Shadow for a 3D effect
     textShadowOffset: { width: 2, height: 2 },
     textShadowRadius: 5,
+    marginBottom: 40,
+  },
+  body: {
+    fontSize: 20,
+    fontWeight: "bold",
+    textAlign: "center",
+    marginHorizontal: 20,
     marginBottom: 40,
   },
   button: {
