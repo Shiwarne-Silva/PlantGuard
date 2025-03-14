@@ -132,7 +132,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#d5e4d9",
   },
   title: {
-    fontSize: 24,
+    fontSize: 30,
     fontWeight: "bold",
     marginBottom: 20,
   },
@@ -148,7 +148,7 @@ const styles = StyleSheet.create({
   predictionContainer: {
     marginTop: 20,
     padding: 10,
-    backgroundColor: "#e0e0e0",
+    backgroundColor: "#387b5b",
     borderRadius: 10,
   },
   predictionText: {
