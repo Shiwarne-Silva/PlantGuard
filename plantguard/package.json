@@ -30,7 +30,6 @@
     "react-native": "0.76.7"
   },
   "devDependencies": {
-    "@react-native-community/cli": "latest",
     "@babel/core": "^7.20.0"
   },
   "private": true

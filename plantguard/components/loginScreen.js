@@ -8,6 +8,7 @@ import {
   Image,
   useWindowDimensions,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import {
@@ -17,7 +18,7 @@ import {
   Poppins_600SemiBold,
 } from "@expo-google-fonts/poppins";
 import { LinearGradient } from "expo-linear-gradient";
-import { auth } from "../firebaseConfig"; // Import the auth instance
+import { auth } from "../firebaseConfig";
 import { signInWithEmailAndPassword } from "firebase/auth";
 
 export default function LoginScreen() {
@@ -25,6 +26,7 @@ export default function LoginScreen() {
   const { width } = useWindowDimensions();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false); // Add loading state
 
   const [fontsLoaded] = useFonts({
     "Poppins-Bold": Poppins_700Bold,
@@ -42,8 +44,8 @@ export default function LoginScreen() {
       return;
     }
 
+    setLoading(true); // Show loading indicator
     try {
-      // Sign in the user with Firebase Authentication
       const userCredential = await signInWithEmailAndPassword(
         auth,
         email,
@@ -51,11 +53,8 @@ export default function LoginScreen() {
       );
       const user = userCredential.user;
       console.log("User logged in:", user.uid);
-
-      // Navigate to Home screen after successful login
       navigation.navigate("Home");
     } catch (error) {
-      // Handle errors (e.g., wrong password, user not found)
       let errorMessage = "An error occurred during login.";
       switch (error.code) {
         case "auth/user-not-found":
@@ -71,6 +70,8 @@ export default function LoginScreen() {
           errorMessage = error.message;
       }
       Alert.alert("Login Error", errorMessage);
+    } finally {
+      setLoading(false); // Hide loading indicator
     }
   };
 
@@ -105,6 +106,7 @@ export default function LoginScreen() {
             onChangeText={setEmail}
             keyboardType="email-address"
             autoCapitalize="none"
+            editable={!loading} // Disable input while loading
           />
           <TextInput
             style={styles.input}
@@ -113,12 +115,21 @@ export default function LoginScreen() {
             value={password}
             onChangeText={setPassword}
             secureTextEntry
+            editable={!loading} // Disable input while loading
           />
         </View>
 
         {/* Login Button */}
-        <TouchableOpacity style={styles.button} onPress={handleLogin}>
-          <Text style={styles.buttonText}>Login</Text>
+        <TouchableOpacity
+          style={[styles.button, loading && styles.buttonDisabled]}
+          onPress={handleLogin}
+          disabled={loading}
+        >
+          {loading ? (
+            <ActivityIndicator size="small" color="#ffffff" />
+          ) : (
+            <Text style={styles.buttonText}>Login</Text>
+          )}
         </TouchableOpacity>
 
         {/* Signup Link */}
@@ -199,6 +210,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 6,
     elevation: 8,
+  },
+  buttonDisabled: {
+    backgroundColor: "#81C784", // Lighter green when disabled
+    opacity: 0.7,
   },
   buttonText: {
     color: "#ffffff",
