@@ -17,11 +17,12 @@ import {
   Poppins_600SemiBold,
 } from "@expo-google-fonts/poppins";
 import { LinearGradient } from "expo-linear-gradient";
+import { auth } from "../firebaseConfig"; // Import the auth instance
+import { createUserWithEmailAndPassword } from "firebase/auth";
 
 export default function SignupScreen() {
   const navigation = useNavigation();
   const { width } = useWindowDimensions();
-  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -35,15 +36,42 @@ export default function SignupScreen() {
     return null;
   }
 
-  const handleSignup = () => {
-    // Add your signup logic here (e.g., API call)
+  const handleSignup = async () => {
     if (!email || !password) {
       Alert.alert("Error", "Please fill in all fields.");
       return;
     }
-    console.log("Signing up with:", { email, password });
-    // Navigate to HomeScreen or another screen after successful signup
-    navigation.navigate("Landing");
+
+    try {
+      // Create a new user with Firebase Authentication
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+      const user = userCredential.user;
+      console.log("User signed up:", user.uid);
+
+      // Navigate to Home screen after successful signup
+      navigation.navigate("Home");
+    } catch (error) {
+      // Handle errors (e.g., email already in use, weak password)
+      let errorMessage = "An error occurred during signup.";
+      switch (error.code) {
+        case "auth/email-already-in-use":
+          errorMessage = "This email is already in use.";
+          break;
+        case "auth/invalid-email":
+          errorMessage = "Please enter a valid email address.";
+          break;
+        case "auth/weak-password":
+          errorMessage = "Password should be at least 6 characters.";
+          break;
+        default:
+          errorMessage = error.message;
+      }
+      Alert.alert("Signup Error", errorMessage);
+    }
   };
 
   return (

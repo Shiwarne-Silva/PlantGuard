@@ -17,6 +17,8 @@ import {
   Poppins_600SemiBold,
 } from "@expo-google-fonts/poppins";
 import { LinearGradient } from "expo-linear-gradient";
+import { auth } from "../firebaseConfig"; // Import the auth instance
+import { signInWithEmailAndPassword } from "firebase/auth";
 
 export default function LoginScreen() {
   const navigation = useNavigation();
@@ -34,15 +36,42 @@ export default function LoginScreen() {
     return null;
   }
 
-  const handleLogin = () => {
-    // Add your login logic here (e.g., API call)
+  const handleLogin = async () => {
     if (!email || !password) {
       Alert.alert("Error", "Please fill in all fields.");
       return;
     }
-    console.log("Logging in with:", { email, password });
-    // Navigate to HomeScreen or another screen after successful login
-    navigation.navigate("Landing");
+
+    try {
+      // Sign in the user with Firebase Authentication
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+      const user = userCredential.user;
+      console.log("User logged in:", user.uid);
+
+      // Navigate to Home screen after successful login
+      navigation.navigate("Home");
+    } catch (error) {
+      // Handle errors (e.g., wrong password, user not found)
+      let errorMessage = "An error occurred during login.";
+      switch (error.code) {
+        case "auth/user-not-found":
+          errorMessage = "No user found with this email.";
+          break;
+        case "auth/wrong-password":
+          errorMessage = "Incorrect password.";
+          break;
+        case "auth/invalid-email":
+          errorMessage = "Please enter a valid email address.";
+          break;
+        default:
+          errorMessage = error.message;
+      }
+      Alert.alert("Login Error", errorMessage);
+    }
   };
 
   return (
