@@ -10,6 +10,7 @@ import {
   useWindowDimensions,
   ScrollView,
   Platform,
+  FlatList,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import axios from "axios";
@@ -25,7 +26,7 @@ import {
   Poppins_400Regular,
   Poppins_600SemiBold,
 } from "@expo-google-fonts/poppins";
-import { useNavigation } from "@react-navigation/native"; // Replace useRouter with useNavigation
+import { useNavigation } from "@react-navigation/native";
 
 // Replace with your computer's IP
 const API_URL = "http://192.168.1.7:8009/predict";
@@ -35,7 +36,7 @@ export default function UploadScreen() {
   const [prediction, setPrediction] = useState(null);
   const [loading, setLoading] = useState(false);
   const { width } = useWindowDimensions();
-  const navigation = useNavigation(); // Use useNavigation instead of useRouter
+  const navigation = useNavigation();
 
   const [fontsLoaded] = useFonts({
     "Poppins-Bold": Poppins_700Bold,
@@ -132,7 +133,7 @@ export default function UploadScreen() {
         <View style={styles.headerContent}>
           <TouchableOpacity
             style={styles.backButton}
-            onPress={() => navigation.goBack()} // Replace router.back with navigation.goBack
+            onPress={() => navigation.goBack()}
           >
             <ChevronLeft color="#fff" size={32} />
           </TouchableOpacity>
@@ -209,6 +210,23 @@ export default function UploadScreen() {
                 <Text style={styles.predictionValue}>
                   {(prediction.confidence * 100).toFixed(2)}%
                 </Text>
+              </View>
+              <View style={styles.predictionRow}>
+                <Text style={styles.predictionLabel}>Disease Info:</Text>
+                <Text style={styles.predictionValue}>
+                  {prediction.disease_info}
+                </Text>
+              </View>
+              <View style={styles.predictionSection}>
+                <Text style={styles.predictionLabel}>Treatments:</Text>
+                <FlatList
+                  data={prediction.treatments}
+                  renderItem={({ item }) => (
+                    <Text style={styles.treatmentItem}>• {item}</Text>
+                  )}
+                  keyExtractor={(item, index) => index.toString()}
+                  style={styles.treatmentList}
+                />
               </View>
             </View>
           )}
@@ -360,17 +378,33 @@ const styles = StyleSheet.create({
   predictionRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "flex-start",
     marginBottom: 12,
   },
   predictionLabel: {
     fontSize: 16,
     color: "#E0E0E0",
     fontFamily: "Poppins-Regular",
+    flex: 1,
   },
   predictionValue: {
     fontSize: 16,
     color: "#ffffff",
     fontFamily: "Poppins-SemiBold",
+    flex: 1,
+    textAlign: "right",
+  },
+  predictionSection: {
+    marginTop: 12,
+  },
+  treatmentList: {
+    marginTop: 8,
+  },
+  treatmentItem: {
+    fontSize: 14,
+    color: "#E0E0E0",
+    fontFamily: "Poppins-Regular",
+    marginBottom: 8,
+    marginLeft: 10,
   },
 });
