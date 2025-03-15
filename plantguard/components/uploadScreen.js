@@ -11,8 +11,8 @@ import {
 import * as ImagePicker from "expo-image-picker";
 import axios from "axios";
 
-// Replace with your computer's IP or ngrok URL
-const API_URL = "http://172.20.10.2:8009/predict"; // Example: Replace with your IP or ngrok URL
+// Replace with your computer's IP
+const API_URL = "http://192.168.1.7:8009/predict"; // Example: Replace with your IP
 
 const UploadScreen = () => {
   const [image, setImage] = useState(null);
