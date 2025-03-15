@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   StyleSheet,
   Text,
@@ -11,6 +11,7 @@ import {
   ScrollView,
   Platform,
   FlatList,
+  Animated,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import axios from "axios";
@@ -37,6 +38,11 @@ export default function UploadScreen() {
   const [loading, setLoading] = useState(false);
   const { width } = useWindowDimensions();
   const navigation = useNavigation();
+
+  // Animation for header visibility
+  const [headerVisible, setHeaderVisible] = useState(true);
+  const headerHeight = Platform.OS === "ios" ? 140 : 100;
+  const animatedHeader = useRef(new Animated.Value(0)).current;
 
   const [fontsLoaded] = useFonts({
     "Poppins-Bold": Poppins_700Bold,
@@ -103,6 +109,27 @@ export default function UploadScreen() {
     }
   };
 
+  const handleScroll = (event) => {
+    const offsetY = event.nativeEvent.contentOffset.y;
+    const threshold = 50; // Adjust this threshold as needed
+
+    if (offsetY > threshold && headerVisible) {
+      setHeaderVisible(false);
+      Animated.timing(animatedHeader, {
+        toValue: -headerHeight,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    } else if (offsetY <= threshold && !headerVisible) {
+      setHeaderVisible(true);
+      Animated.timing(animatedHeader, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    }
+  };
+
   if (!fontsLoaded) {
     return null;
   }
@@ -124,8 +151,15 @@ export default function UploadScreen() {
         style={[styles.gradient, { width }]}
       />
 
-      {/* Header Bar */}
-      <View style={styles.header}>
+      {/* Animated Header Bar */}
+      <Animated.View
+        style={[
+          styles.header,
+          {
+            transform: [{ translateY: animatedHeader }],
+          },
+        ]}
+      >
         <LinearGradient
           colors={["rgba(0,0,0,0.7)", "rgba(0,0,0,0)"]}
           style={styles.headerGradient}
@@ -142,12 +176,14 @@ export default function UploadScreen() {
             <Text style={styles.headerSubtitle}>Analyze & Diagnose</Text>
           </View>
         </View>
-      </View>
+      </Animated.View>
 
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        onScroll={handleScroll}
+        scrollEventThrottle={10} // Adjust throttle for smoother scrolling
       >
         <View style={styles.content}>
           <View style={styles.imageSection}>
