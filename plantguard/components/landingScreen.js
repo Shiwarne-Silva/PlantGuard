@@ -17,7 +17,7 @@ import {
 import { Leaf, Upload } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 
-export default function HomeScreen() {
+export default function LandingScreen() {
   const navigation = useNavigation();
   const { width } = useWindowDimensions();
 
@@ -58,21 +58,6 @@ export default function HomeScreen() {
           <Text style={styles.subtitle}>
             AI-Powered Plant Disease Detection
           </Text>
-          {/* Login and Signup Buttons */}
-          <View style={styles.authButtonsContainer}>
-            <TouchableOpacity
-              style={[styles.authButton, styles.loginButton]}
-              onPress={() => navigation.navigate("Login")} // Navigate to Login screen (to be implemented)
-            >
-              <Text style={styles.authButtonText}>Login</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.authButton, styles.signupButton]}
-              onPress={() => navigation.navigate("Signup")} // Navigate to Signup screen (to be implemented)
-            >
-              <Text style={styles.authButtonText}>Signup</Text>
-            </TouchableOpacity>
-          </View>
         </View>
 
         {/* Description Section */}
@@ -82,6 +67,15 @@ export default function HomeScreen() {
             photo to get accurate diagnoses and treatment recommendations.
           </Text>
         </View>
+
+        {/* Action Button */}
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => navigation.navigate("Upload")}
+        >
+          <Upload size={24} color="#ffffff" style={styles.buttonIcon} />
+          <Text style={styles.buttonText}>Scan Your Plant</Text>
+        </TouchableOpacity>
 
         {/* Stats Section */}
         <View style={styles.statsContainer}>
@@ -158,41 +152,9 @@ const styles = StyleSheet.create({
     color: "#E0E0E0",
     fontFamily: "Poppins-Regular",
     textAlign: "center",
-    marginBottom: 30, // Add space for the buttons below
-  },
-  authButtonsContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    marginTop: 10,
-    gap: 16, // Space between the buttons
-  },
-  authButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 24,
-    borderRadius: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 8,
-    opacity: 0.8, // Translucent effect
-  },
-  loginButton: {
-    width: 95,
-    backgroundColor: "rgba(76, 175, 80, 0.6)", // Translucent green for Login
-  },
-  signupButton: {
-    width: 95,
-    backgroundColor: "rgba(76, 175, 80, 0.6)", // Translucent green for Signup
-  },
-  authButtonText: {
-    color: "#ffffff",
-    fontSize: 16,
-    fontFamily: "Poppins-SemiBold",
-    textAlign: "center",
+    marginBottom: 20, // Add space for the buttons below
   },
   descriptionContainer: {
-    paddingBottom: 120, // Add space for the stats below
     paddingHorizontal: 20,
   },
   description: {
