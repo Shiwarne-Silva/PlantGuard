@@ -19,16 +19,7 @@ export default function App() {
           name="Upload"
           component={UploadScreen}
           options={{
-            title: "Plant Disease Detection",
-            headerStyle: {
-              backgroundColor: "#d5e4d9", // Light green to match the UploadScreen background
-            },
-            headerTintColor: "#000000", // Black text for contrast
-            headerTitleStyle: {
-              fontWeight: "bold",
-              fontSize: 20,
-            },
-            headerBackTitleVisible: false, // Hide the back button title
+            headerShown: false, // Hide header on UploadScreen
           }}
         />
       </Stack.Navigator>

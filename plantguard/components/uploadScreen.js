@@ -3,23 +3,46 @@ import {
   StyleSheet,
   Text,
   View,
-  Button,
+  TouchableOpacity,
   Image,
   ActivityIndicator,
   Alert,
+  useWindowDimensions,
+  ScrollView,
+  Platform,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import axios from "axios";
+import {
+  Upload as UploadIcon,
+  Image as ImageIcon,
+  ChevronLeft,
+} from "lucide-react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import {
+  useFonts,
+  Poppins_700Bold,
+  Poppins_400Regular,
+  Poppins_600SemiBold,
+} from "@expo-google-fonts/poppins";
+import { useNavigation } from "@react-navigation/native"; // Replace useRouter with useNavigation
 
 // Replace with your computer's IP
-const API_URL = "http://192.168.1.7:8009/predict"; // Example: Replace with your IP
+const API_URL = "http://192.168.1.7:8009/predict";
 
-const UploadScreen = () => {
+export default function UploadScreen() {
   const [image, setImage] = useState(null);
   const [prediction, setPrediction] = useState(null);
   const [loading, setLoading] = useState(false);
+  const { width } = useWindowDimensions();
+  const navigation = useNavigation(); // Use useNavigation instead of useRouter
 
-  // Request permission to access the camera roll
+  const [fontsLoaded] = useFonts({
+    "Poppins-Bold": Poppins_700Bold,
+    "Poppins-Regular": Poppins_400Regular,
+    "Poppins-SemiBold": Poppins_600SemiBold,
+  });
+
   const requestPermission = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
@@ -32,7 +55,6 @@ const UploadScreen = () => {
     return true;
   };
 
-  // Function to pick an image from the device
   const pickImage = async () => {
     const hasPermission = await requestPermission();
     if (!hasPermission) return;
@@ -45,18 +67,15 @@ const UploadScreen = () => {
 
     if (!result.canceled) {
       setImage(result.assets[0].uri);
-      setPrediction(null); // Reset prediction when a new image is selected
+      setPrediction(null);
     }
   };
 
-  // Function to upload the image to the backend and get predictions
   const uploadImage = async () => {
     if (!image) {
       Alert.alert("No Image", "Please select an image first!");
       return;
     }
-
-    console.log("Selected image URI:", image);
 
     setLoading(true);
 
@@ -68,15 +87,12 @@ const UploadScreen = () => {
         type: "image/jpeg",
       });
 
-      console.log("Sending request to:", API_URL);
-
       const response = await axios.post(API_URL, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
       });
 
-      console.log("Prediction response:", response.data);
       setPrediction(response.data);
     } catch (error) {
       console.error("Error during prediction:", error);
@@ -86,76 +102,275 @@ const UploadScreen = () => {
     }
   };
 
+  if (!fontsLoaded) {
+    return null;
+  }
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Potato Plant Disease Detection</Text>
+      {/* Background Image */}
+      <Image
+        source={{
+          uri: "https://images.unsplash.com/photo-1530836369250-ef72a3f5cda8?q=80&w=1920",
+        }}
+        style={[styles.backgroundImage, { width }]}
+        resizeMode="cover"
+      />
 
-      {/* Button to pick an image */}
-      <Button title="Pick an Image" onPress={pickImage} />
+      {/* Overlay Gradient */}
+      <LinearGradient
+        colors={["rgba(0,0,0,0.1)", "rgba(0,0,0,0.7)"]}
+        style={[styles.gradient, { width }]}
+      />
 
-      {/* Display the selected image */}
-      {image && <Image source={{ uri: image }} style={styles.image} />}
-
-      {/* Button to upload the image and get predictions */}
-      <View style={styles.buttonContainer}>
-        <Button
-          title="Predict Disease"
-          onPress={uploadImage}
-          disabled={loading}
+      {/* Header Bar */}
+      <View style={styles.header}>
+        <LinearGradient
+          colors={["rgba(0,0,0,0.7)", "rgba(0,0,0,0)"]}
+          style={styles.headerGradient}
         />
+        <View style={styles.headerContent}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()} // Replace router.back with navigation.goBack
+          >
+            <ChevronLeft color="#fff" size={32} />
+          </TouchableOpacity>
+          <View style={styles.headerTextContainer}>
+            <Text style={styles.headerTitle}>Plant Disease Detection</Text>
+            <Text style={styles.headerSubtitle}>Analyze & Diagnose</Text>
+          </View>
+        </View>
       </View>
 
-      {/* Display loading indicator */}
-      {loading && <ActivityIndicator size="large" color="#0000ff" />}
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.content}>
+          <View style={styles.imageSection}>
+            {image ? (
+              <Image source={{ uri: image }} style={styles.selectedImage} />
+            ) : (
+              <View style={styles.placeholderContainer}>
+                <ImageIcon
+                  size={64}
+                  color="#ffffff"
+                  style={styles.placeholderIcon}
+                />
+                <Text style={styles.placeholderText}>No image selected</Text>
+              </View>
+            )}
+          </View>
 
-      {/* Display prediction results */}
-      {prediction && (
-        <View style={styles.predictionContainer}>
-          <Text style={styles.predictionText}>
-            Predicted Disease: {prediction.class}
-          </Text>
-          <Text style={styles.predictionText}>
-            Confidence: {(prediction.confidence * 100).toFixed(2)}%
-          </Text>
+          <View style={styles.actionSection}>
+            <TouchableOpacity
+              style={[styles.button, styles.uploadButton]}
+              onPress={pickImage}
+            >
+              <UploadIcon size={24} color="#ffffff" style={styles.buttonIcon} />
+              <Text style={styles.buttonText}>Select Image</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.button,
+                styles.predictButton,
+                !image && styles.buttonDisabled,
+              ]}
+              onPress={uploadImage}
+              disabled={!image || loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#ffffff" />
+              ) : (
+                <>
+                  <ImageIcon
+                    size={24}
+                    color="#ffffff"
+                    style={styles.buttonIcon}
+                  />
+                  <Text style={styles.buttonText}>Analyze Disease</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
+
+          {prediction && (
+            <View style={styles.predictionContainer}>
+              <Text style={styles.predictionTitle}>Analysis Report</Text>
+              <View style={styles.predictionRow}>
+                <Text style={styles.predictionLabel}>Disease:</Text>
+                <Text style={styles.predictionValue}>{prediction.class}</Text>
+              </View>
+              <View style={styles.predictionRow}>
+                <Text style={styles.predictionLabel}>Confidence:</Text>
+                <Text style={styles.predictionValue}>
+                  {(prediction.confidence * 100).toFixed(2)}%
+                </Text>
+              </View>
+            </View>
+          )}
         </View>
-      )}
+      </ScrollView>
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#000",
+  },
+  backgroundImage: {
+    height: "100%",
+    position: "absolute",
+  },
+  gradient: {
+    height: "100%",
+    position: "absolute",
+  },
+  header: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+    height: Platform.OS === "ios" ? 120 : 100,
+  },
+  headerGradient: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: "100%",
+  },
+  headerContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingTop: Platform.OS === "ios" ? 90 : 40,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
     justifyContent: "center",
     alignItems: "center",
-    padding: 20,
-    backgroundColor: "#d5e4d9",
   },
-  title: {
-    textAlign: "center",
-    fontSize: 30,
-    fontWeight: "bold",
-    marginBottom: 20,
+  headerTextContainer: {
+    marginLeft: 8,
   },
-  image: {
-    width: 300,
-    height: 300,
-    marginVertical: 20,
-    borderRadius: 10,
+  headerTitle: {
+    color: "#ffffff",
+    fontSize: 24,
+    fontFamily: "Poppins-Bold",
   },
-  buttonContainer: {
-    marginVertical: 10,
+  headerSubtitle: {
+    color: "#ffffff",
+    opacity: 0.8,
+    fontSize: 14,
+    fontFamily: "Poppins-Regular",
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+  },
+  content: {
+    flex: 1,
+    padding: 24,
+    paddingTop: Platform.OS === "ios" ? 190 : 120,
+    paddingBottom: 40,
+  },
+  imageSection: {
+    aspectRatio: 1,
+    width: "100%",
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    borderRadius: 20,
+    overflow: "hidden",
+    marginBottom: 24,
+  },
+  selectedImage: {
+    width: "100%",
+    height: "100%",
+  },
+  placeholderContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  placeholderIcon: {
+    marginBottom: 16,
+    opacity: 0.7,
+  },
+  placeholderText: {
+    color: "#ffffff",
+    fontSize: 16,
+    fontFamily: "Poppins-Regular",
+    opacity: 0.7,
+  },
+  actionSection: {
+    gap: 16,
+  },
+  button: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    borderRadius: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 8,
+  },
+  uploadButton: {
+    backgroundColor: "#4CAF50",
+  },
+  predictButton: {
+    backgroundColor: "#2196F3",
+  },
+  buttonDisabled: {
+    opacity: 0.5,
+  },
+  buttonIcon: {
+    marginRight: 12,
+  },
+  buttonText: {
+    color: "#ffffff",
+    fontSize: 18,
+    fontFamily: "Poppins-SemiBold",
   },
   predictionContainer: {
-    marginTop: 20,
-    padding: 10,
-    backgroundColor: "#387b5b",
-    borderRadius: 10,
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    borderRadius: 20,
+    padding: 24,
+    marginTop: 24,
   },
-  predictionText: {
-    fontSize: 18,
-    fontWeight: "bold",
+  predictionTitle: {
+    fontSize: 24,
+    color: "#ffffff",
+    fontFamily: "Poppins-Bold",
+    marginBottom: 16,
+    textAlign: "center",
+  },
+  predictionRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  predictionLabel: {
+    fontSize: 16,
+    color: "#E0E0E0",
+    fontFamily: "Poppins-Regular",
+  },
+  predictionValue: {
+    fontSize: 16,
+    color: "#ffffff",
+    fontFamily: "Poppins-SemiBold",
   },
 });
-
-export default UploadScreen;
