@@ -8,10 +8,9 @@ import {
   ActivityIndicator,
   Alert,
   useWindowDimensions,
-  ScrollView,
   Platform,
-  FlatList,
   Animated,
+  ScrollView,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import axios from "axios";
@@ -41,7 +40,7 @@ export default function UploadScreen() {
 
   // Animation for header visibility
   const [headerVisible, setHeaderVisible] = useState(true);
-  const headerHeight = Platform.OS === "ios" ? 140 : 100;
+  const headerHeight = Platform.OS === "ios" ? 120 : 100;
   const animatedHeader = useRef(new Animated.Value(0)).current;
 
   const [fontsLoaded] = useFonts({
@@ -51,30 +50,62 @@ export default function UploadScreen() {
   });
 
   const requestPermission = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== "granted") {
-      Alert.alert(
-        "Permission Denied",
-        "Sorry, we need camera roll permissions to make this work!"
-      );
+    try {
+      console.log("Requesting media library permissions...");
+      const { status } =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== "granted") {
+        console.log("Media library permissions denied");
+        Alert.alert(
+          "Permission Denied",
+          "We need camera roll permissions to select an image. Please enable permissions in your device settings."
+        );
+        return false;
+      }
+      console.log("Media library permissions granted");
+      return true;
+    } catch (error) {
+      console.error("Error requesting permissions:", error);
+      Alert.alert("Error", "Failed to request permissions. Please try again.");
       return false;
     }
-    return true;
   };
 
   const pickImage = async () => {
+    console.log("Pick image button pressed");
     const hasPermission = await requestPermission();
-    if (!hasPermission) return;
+    if (!hasPermission) {
+      console.log("Permission not granted, aborting image picking");
+      return;
+    }
 
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      quality: 1,
-    });
+    try {
+      console.log("Launching image library...");
+      let result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images"], // Updated to array format ["images"]
+        allowsEditing: true,
+        quality: 1,
+      });
 
-    if (!result.canceled) {
-      setImage(result.assets[0].uri);
-      setPrediction(null);
+      console.log("Image picker result:", result);
+
+      if (!result.canceled) {
+        // Handle older Expo SDK versions (pre-SDK 40) where assets might be directly on result
+        const uri = result.assets ? result.assets[0].uri : result.uri;
+        if (uri) {
+          console.log("Image selected:", uri);
+          setImage(uri);
+          setPrediction(null);
+        } else {
+          console.log("No valid image URI found in result");
+          Alert.alert("Error", "No valid image selected. Please try again.");
+        }
+      } else {
+        console.log("Image picking cancelled");
+      }
+    } catch (error) {
+      console.error("Error picking image:", error);
+      Alert.alert("Error", "Failed to pick an image. Please try again.");
     }
   };
 
@@ -103,7 +134,19 @@ export default function UploadScreen() {
       setPrediction(response.data);
     } catch (error) {
       console.error("Error during prediction:", error);
-      Alert.alert("Error", "Something went wrong while making the prediction.");
+      if (error.response) {
+        const errorMessage =
+          error.response.data.detail ||
+          "Something went wrong while making the prediction.";
+        Alert.alert("Error", errorMessage);
+      } else if (error.request) {
+        Alert.alert(
+          "Error",
+          "Network error. Please check your internet connection and try again."
+        );
+      } else {
+        Alert.alert("Error", "An unexpected error occurred. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
@@ -111,7 +154,7 @@ export default function UploadScreen() {
 
   const handleScroll = (event) => {
     const offsetY = event.nativeEvent.contentOffset.y;
-    const threshold = 50; // Adjust this threshold as needed
+    const threshold = 50;
 
     if (offsetY > threshold && headerVisible) {
       setHeaderVisible(false);
@@ -183,7 +226,7 @@ export default function UploadScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         onScroll={handleScroll}
-        scrollEventThrottle={10} // Adjust throttle for smoother scrolling
+        scrollEventThrottle={16}
       >
         <View style={styles.content}>
           <View style={styles.imageSection}>
@@ -204,7 +247,10 @@ export default function UploadScreen() {
           <View style={styles.actionSection}>
             <TouchableOpacity
               style={[styles.button, styles.uploadButton]}
-              onPress={pickImage}
+              onPress={() => {
+                console.log("Select Image button pressed");
+                pickImage();
+              }}
             >
               <UploadIcon size={24} color="#ffffff" style={styles.buttonIcon} />
               <Text style={styles.buttonText}>Select Image</Text>
@@ -255,14 +301,13 @@ export default function UploadScreen() {
               </View>
               <View style={styles.predictionSection}>
                 <Text style={styles.predictionLabel}>Treatments:</Text>
-                <FlatList
-                  data={prediction.treatments}
-                  renderItem={({ item }) => (
-                    <Text style={styles.treatmentItem}>• {item}</Text>
-                  )}
-                  keyExtractor={(item, index) => index.toString()}
-                  style={styles.treatmentList}
-                />
+                <View style={styles.treatmentList}>
+                  {prediction.treatments.map((treatment, index) => (
+                    <Text key={index} style={styles.treatmentItem}>
+                      • {treatment}
+                    </Text>
+                  ))}
+                </View>
               </View>
             </View>
           )}
