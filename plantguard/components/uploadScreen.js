@@ -191,58 +191,58 @@ export default function UploadScreen() {
     });
 
     const htmlContent = `
-      <html>
-        <head>
-          <style>
-            body { font-family: Arial, sans-serif; padding: 20px; color: #333; }
-            h1 { text-align: center; color: #2c3e50; }
-            h2 { color: #34495e; }
-            h3 { text-align: center; color: #7f8c8d; font-size: 16px; margin-bottom: 10px; }
-            p { margin: 10px 0; }
-            ul { list-style-type: disc; margin-left: 20px; }
-            .section { margin-bottom: 20px; }
-            .image-section { text-align: center; margin-bottom: 20px; }
-            img { max-width: 100%; height: auto; max-height: 300px; }
-            .date-time { text-align: center; color: #7f8c8d; font-size: 12px; margin-top: 10px; }
-          </style>
-        </head>
-        <body>
-          <h1>PlantGuard</h1>
-          <center><h2>Plant Disease Analysis Report</h2></center>
-          <p class="date-time">Generated on: ${currentDate}</p>
-          ${
-            imageBase64
-              ? `
-          <div class="image-section">
-            <h3>Uploaded Image</h3>
-            <img src="${imageBase64}" alt="Uploaded Plant Image" />
-          </div>
-          `
-              : ""
-          }
-          <div class="section">
-            <h2>Disease</h2>
-            <p>${prediction.class}</p>
-          </div>
-          <div class="section">
-            <h2>Confidence</h2>
-            <p>${(prediction.confidence * 100).toFixed(2)}%</p>
-          </div>
-          <div class="section">
-            <h2>Disease Information</h2>
-            <p>${prediction.disease_info}</p>
-          </div>
-          <div class="section">
-            <h2>Treatments</h2>
-            <ul>
-              ${prediction.treatments
-                .map((treatment) => `<li>${treatment}</li>`)
-                .join("")}
-            </ul>
-          </div>
-        </body>
-      </html>
-    `;
+       <html>
+         <head>
+           <style>
+             body { font-family: Arial, sans-serif; padding: 20px; color: #333; }
+             h1 { text-align: center; color: #2c3e50; }
+             h2 { color: #34495e; }
+             h3 { text-align: center; color: #7f8c8d; font-size: 16px; margin-bottom: 10px; }
+             p { margin: 10px 0; }
+             ul { list-style-type: disc; margin-left: 20px; }
+             .section { margin-bottom: 20px; }
+             .image-section { text-align: center; margin-bottom: 20px; }
+             img { max-width: 100%; height: auto; max-height: 300px; }
+             .date-time { text-align: center; color: #7f8c8d; font-size: 12px; margin-top: 10px; }
+           </style>
+         </head>
+         <body>
+           <h1>PlantGuard</h1>
+           <center><h2>Plant Disease Analysis Report</h2></center>
+           <p class="date-time">Generated on: ${currentDate}</p>
+           ${
+             imageBase64
+               ? `
+           <div class="image-section">
+             <h3>Uploaded Image</h3>
+             <img src="${imageBase64}" alt="Uploaded Plant Image" />
+           </div>
+           `
+               : ""
+           }
+           <div class="section">
+             <h2>Disease</h2>
+             <p>${prediction.class}</p>
+           </div>
+           <div class="section">
+             <h2>Confidence</h2>
+             <p>${(prediction.confidence * 100).toFixed(2)}%</p>
+           </div>
+           <div class="section">
+             <h2>Disease Information</h2>
+             <p>${prediction.disease_info}</p>
+           </div>
+           <div class="section">
+             <h2>Treatments</h2>
+             <ul>
+               ${prediction.treatments
+                 .map((treatment) => `<li>${treatment}</li>`)
+                 .join("")}
+             </ul>
+           </div>
+         </body>
+       </html>
+     `;
 
     try {
       console.log("Generating PDF...");
