@@ -18,15 +18,16 @@ import {
   Poppins_600SemiBold,
 } from "@expo-google-fonts/poppins";
 import { LinearGradient } from "expo-linear-gradient";
-import { auth } from "../firebaseConfig";
+import { auth, db } from "../firebaseConfig";
 import { signInWithEmailAndPassword } from "firebase/auth";
+import { query, collection, where, getDocs } from "firebase/firestore";
 
 export default function LoginScreen() {
   const navigation = useNavigation();
   const { width } = useWindowDimensions();
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState(""); // Can be email or username
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false); // Add loading state
+  const [loading, setLoading] = useState(false);
 
   const [fontsLoaded] = useFonts({
     "Poppins-Bold": Poppins_700Bold,
@@ -39,13 +40,33 @@ export default function LoginScreen() {
   }
 
   const handleLogin = async () => {
-    if (!email || !password) {
+    if (!identifier || !password) {
       Alert.alert("Error", "Please fill in all fields.");
       return;
     }
 
-    setLoading(true); // Show loading indicator
+    setLoading(true);
+
     try {
+      let email = identifier;
+
+      // Check if the identifier is a username (not an email)
+      if (!identifier.includes("@")) {
+        const q = query(
+          collection(db, "users"),
+          where("username", "==", identifier)
+        );
+        const querySnapshot = await getDocs(q);
+
+        if (querySnapshot.empty) {
+          throw new Error("auth/user-not-found");
+        }
+
+        const userDoc = querySnapshot.docs[0];
+        email = userDoc.data().email;
+      }
+
+      // Sign in with email and password
       const userCredential = await signInWithEmailAndPassword(
         auth,
         email,
@@ -56,9 +77,9 @@ export default function LoginScreen() {
       navigation.navigate("Home");
     } catch (error) {
       let errorMessage = "An error occurred during login.";
-      switch (error.code) {
+      switch (error.code || error.message) {
         case "auth/user-not-found":
-          errorMessage = "No user found with this email.";
+          errorMessage = "No user found with this email or username.";
           break;
         case "auth/wrong-password":
           errorMessage = "Incorrect password.";
@@ -71,7 +92,7 @@ export default function LoginScreen() {
       }
       Alert.alert("Login Error", errorMessage);
     } finally {
-      setLoading(false); // Hide loading indicator
+      setLoading(false);
     }
   };
 
@@ -100,13 +121,12 @@ export default function LoginScreen() {
         <View style={styles.inputContainer}>
           <TextInput
             style={styles.input}
-            placeholder="Email"
+            placeholder="Email or Username"
             placeholderTextColor="#E0E0E0"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
+            value={identifier}
+            onChangeText={setIdentifier}
             autoCapitalize="none"
-            editable={!loading} // Disable input while loading
+            editable={!loading}
           />
           <TextInput
             style={styles.input}
@@ -115,7 +135,7 @@ export default function LoginScreen() {
             value={password}
             onChangeText={setPassword}
             secureTextEntry
-            editable={!loading} // Disable input while loading
+            editable={!loading}
           />
         </View>
 
@@ -212,7 +232,7 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   buttonDisabled: {
-    backgroundColor: "#81C784", // Lighter green when disabled
+    backgroundColor: "#81C784",
     opacity: 0.7,
   },
   buttonText: {

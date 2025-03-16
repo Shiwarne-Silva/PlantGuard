@@ -8,6 +8,7 @@ import {
   Image,
   useWindowDimensions,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import {
@@ -17,14 +18,24 @@ import {
   Poppins_600SemiBold,
 } from "@expo-google-fonts/poppins";
 import { LinearGradient } from "expo-linear-gradient";
-import { auth } from "../firebaseConfig"; // Import the auth instance
+import { auth, db } from "../firebaseConfig";
 import { createUserWithEmailAndPassword } from "firebase/auth";
+import {
+  doc,
+  setDoc,
+  getDocs,
+  query,
+  collection,
+  where,
+} from "firebase/firestore";
 
 export default function SignupScreen() {
   const navigation = useNavigation();
   const { width } = useWindowDimensions();
   const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const [fontsLoaded] = useFonts({
     "Poppins-Bold": Poppins_700Bold,
@@ -36,13 +47,41 @@ export default function SignupScreen() {
     return null;
   }
 
+  const validateUsername = async (username) => {
+    if (username.length < 3) {
+      return "Username must be at least 3 characters long.";
+    }
+    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+      return "Username can only contain letters, numbers, and underscores.";
+    }
+
+    // Check if username already exists in Firestore
+    const q = query(collection(db, "users"), where("username", "==", username));
+    const querySnapshot = await getDocs(q);
+    if (!querySnapshot.empty) {
+      return "This username is already taken.";
+    }
+
+    return null; // No errors
+  };
+
   const handleSignup = async () => {
-    if (!email || !password) {
+    if (!email || !username || !password) {
       Alert.alert("Error", "Please fill in all fields.");
       return;
     }
 
+    setLoading(true);
+
     try {
+      // Validate username
+      const usernameError = await validateUsername(username);
+      if (usernameError) {
+        Alert.alert("Error", usernameError);
+        setLoading(false);
+        return;
+      }
+
       // Create a new user with Firebase Authentication
       const userCredential = await createUserWithEmailAndPassword(
         auth,
@@ -50,12 +89,17 @@ export default function SignupScreen() {
         password
       );
       const user = userCredential.user;
-      console.log("User signed up:", user.uid);
 
-      // Navigate to Home screen after successful signup
+      // Store the username and email in Firestore
+      await setDoc(doc(db, "users", user.uid), {
+        username: username,
+        email: email,
+        createdAt: new Date().toISOString(),
+      });
+
+      console.log("User signed up:", user.uid);
       navigation.navigate("Home");
     } catch (error) {
-      // Handle errors (e.g., email already in use, weak password)
       let errorMessage = "An error occurred during signup.";
       switch (error.code) {
         case "auth/email-already-in-use":
@@ -71,6 +115,8 @@ export default function SignupScreen() {
           errorMessage = error.message;
       }
       Alert.alert("Signup Error", errorMessage);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -107,6 +153,16 @@ export default function SignupScreen() {
             onChangeText={setEmail}
             keyboardType="email-address"
             autoCapitalize="none"
+            editable={!loading}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Username"
+            placeholderTextColor="#E0E0E0"
+            value={username}
+            onChangeText={setUsername}
+            autoCapitalize="none"
+            editable={!loading}
           />
           <TextInput
             style={styles.input}
@@ -115,12 +171,21 @@ export default function SignupScreen() {
             value={password}
             onChangeText={setPassword}
             secureTextEntry
+            editable={!loading}
           />
         </View>
 
         {/* Sign Up Button */}
-        <TouchableOpacity style={styles.button} onPress={handleSignup}>
-          <Text style={styles.buttonText}>Sign Up</Text>
+        <TouchableOpacity
+          style={[styles.button, loading && styles.buttonDisabled]}
+          onPress={handleSignup}
+          disabled={loading}
+        >
+          {loading ? (
+            <ActivityIndicator size="small" color="#ffffff" />
+          ) : (
+            <Text style={styles.buttonText}>Sign Up</Text>
+          )}
         </TouchableOpacity>
 
         {/* Login Link */}
@@ -201,6 +266,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 6,
     elevation: 8,
+  },
+  buttonDisabled: {
+    backgroundColor: "#81C784",
+    opacity: 0.7,
   },
   buttonText: {
     color: "#ffffff",
