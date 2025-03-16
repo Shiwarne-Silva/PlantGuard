@@ -18,6 +18,7 @@ import {
   Upload as UploadIcon,
   Image as ImageIcon,
   ChevronLeft,
+  Download as DownloadIcon,
 } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import {
@@ -27,6 +28,8 @@ import {
   Poppins_600SemiBold,
 } from "@expo-google-fonts/poppins";
 import { useNavigation } from "@react-navigation/native";
+import * as Print from "expo-print";
+import * as Sharing from "expo-sharing";
 
 // Replace with your computer's IP
 const API_URL = "http://192.168.1.7:8009/predict";
@@ -82,7 +85,7 @@ export default function UploadScreen() {
     try {
       console.log("Launching image library...");
       let result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ["images"], // Updated to array format ["images"]
+        mediaTypes: ["images"],
         allowsEditing: true,
         quality: 1,
       });
@@ -90,7 +93,6 @@ export default function UploadScreen() {
       console.log("Image picker result:", result);
 
       if (!result.canceled) {
-        // Handle older Expo SDK versions (pre-SDK 40) where assets might be directly on result
         const uri = result.assets ? result.assets[0].uri : result.uri;
         if (uri) {
           console.log("Image selected:", uri);
@@ -149,6 +151,78 @@ export default function UploadScreen() {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const generatePDF = async () => {
+    if (!prediction) {
+      Alert.alert("No Report", "Please generate an analysis report first!");
+      return;
+    }
+
+    const htmlContent = `
+      <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 20px; color: #333; }
+            h1 { text-align: center; color: #2c3e50; }
+            h2 { color: #34495e; }
+            p { margin: 10px 0; }
+            ul { list-style-type: disc; margin-left: 20px; }
+            .section { margin-bottom: 20px; }
+          </style>
+        </head>
+        <body>
+          <h1>Plant Disease Analysis Report</h1>
+          <div class="section">
+            <h2>Disease</h2>
+            <p>${prediction.class}</p>
+          </div>
+          <div class="section">
+            <h2>Confidence</h2>
+            <p>${(prediction.confidence * 100).toFixed(2)}%</p>
+          </div>
+          <div class="section">
+            <h2>Disease Information</h2>
+            <p>${prediction.disease_info}</p>
+          </div>
+          <div class="section">
+            <h2>Treatments</h2>
+            <ul>
+              ${prediction.treatments
+                .map((treatment) => `<li>${treatment}</li>`)
+                .join("")}
+            </ul>
+          </div>
+        </body>
+      </html>
+    `;
+
+    try {
+      console.log("Generating PDF...");
+      const { uri } = await Print.printToFileAsync({ html: htmlContent });
+      console.log("PDF generated at:", uri);
+
+      if (await Sharing.isAvailableAsync()) {
+        console.log("Sharing PDF...");
+        await Sharing.shareAsync(uri, {
+          mimeType: "application/pdf",
+          dialogTitle: "Download or Share Analysis Report",
+          UTI: "com.adobe.pdf",
+        });
+      } else {
+        console.log("Sharing not available, saving locally if possible");
+        Alert.alert(
+          "Download",
+          "Sharing is not available on this device. The PDF can be accessed via the file system."
+        );
+      }
+    } catch (error) {
+      console.error("Error generating or sharing PDF:", error);
+      Alert.alert(
+        "Error",
+        "Failed to generate or download the PDF. Please try again."
+      );
     }
   };
 
@@ -309,6 +383,17 @@ export default function UploadScreen() {
                   ))}
                 </View>
               </View>
+              <TouchableOpacity
+                style={[styles.button, styles.downloadButton]}
+                onPress={generatePDF}
+              >
+                <DownloadIcon
+                  size={24}
+                  color="#ffffff"
+                  style={styles.buttonIcon}
+                />
+                <Text style={styles.buttonText}>Download Report</Text>
+              </TouchableOpacity>
             </View>
           )}
         </View>
@@ -431,6 +516,10 @@ const styles = StyleSheet.create({
   },
   predictButton: {
     backgroundColor: "#2196F3",
+  },
+  downloadButton: {
+    backgroundColor: "#9C27B0", // Purple color for download button
+    marginTop: 16,
   },
   buttonDisabled: {
     opacity: 0.5,
