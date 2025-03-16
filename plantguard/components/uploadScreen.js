@@ -33,7 +33,7 @@ import * as Sharing from "expo-sharing";
 import * as FileSystem from "expo-file-system";
 
 // Replace with your computer's IP
-const API_URL = "http://192.168.1.7:8009/predict";
+const API_URL = "http://192.168.8.158:8009/predict";
 
 export default function UploadScreen() {
   const [image, setImage] = useState(null);
