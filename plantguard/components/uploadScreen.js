@@ -180,6 +180,16 @@ export default function UploadScreen() {
       }
     }
 
+    // Get the current date and time for the report
+    const currentDate = new Date().toLocaleString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
     const htmlContent = `
       <html>
         <head>
@@ -193,11 +203,13 @@ export default function UploadScreen() {
             .section { margin-bottom: 20px; }
             .image-section { text-align: center; margin-bottom: 20px; }
             img { max-width: 100%; height: auto; max-height: 300px; }
+            .date-time { text-align: center; color: #7f8c8d; font-size: 12px; margin-top: 10px; }
           </style>
         </head>
         <body>
           <h1>PlantGuard</h1>
           <center><h2>Plant Disease Analysis Report</h2></center>
+          <p class="date-time">Generated on: ${currentDate}</p>
           ${
             imageBase64
               ? `
