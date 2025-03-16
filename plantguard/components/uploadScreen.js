@@ -30,6 +30,7 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
+import * as FileSystem from "expo-file-system";
 
 // Replace with your computer's IP
 const API_URL = "http://192.168.1.7:8009/predict";
@@ -160,6 +161,25 @@ export default function UploadScreen() {
       return;
     }
 
+    let imageBase64 = "";
+    if (image) {
+      try {
+        console.log("Converting image to base64...");
+        imageBase64 = await FileSystem.readAsStringAsync(image, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+        imageBase64 = `data:image/jpeg;base64,${imageBase64}`;
+        console.log("Image converted to base64 successfully");
+      } catch (error) {
+        console.error("Error converting image to base64:", error);
+        Alert.alert(
+          "Warning",
+          "Failed to include the image in the PDF. The report will be generated without the image."
+        );
+        imageBase64 = "";
+      }
+    }
+
     const htmlContent = `
       <html>
         <head>
@@ -167,13 +187,27 @@ export default function UploadScreen() {
             body { font-family: Arial, sans-serif; padding: 20px; color: #333; }
             h1 { text-align: center; color: #2c3e50; }
             h2 { color: #34495e; }
+            h3 { text-align: center; color: #7f8c8d; font-size: 16px; margin-bottom: 10px; }
             p { margin: 10px 0; }
             ul { list-style-type: disc; margin-left: 20px; }
             .section { margin-bottom: 20px; }
+            .image-section { text-align: center; margin-bottom: 20px; }
+            img { max-width: 100%; height: auto; max-height: 300px; }
           </style>
         </head>
         <body>
-          <h1>Plant Disease Analysis Report</h1>
+          <h1>PlantGuard</h1>
+          <center><h2>Plant Disease Analysis Report</h2></center>
+          ${
+            imageBase64
+              ? `
+          <div class="image-section">
+            <h3>Uploaded Image</h3>
+            <img src="${imageBase64}" alt="Uploaded Plant Image" />
+          </div>
+          `
+              : ""
+          }
           <div class="section">
             <h2>Disease</h2>
             <p>${prediction.class}</p>
@@ -518,7 +552,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#2196F3",
   },
   downloadButton: {
-    backgroundColor: "#9C27B0", // Purple color for download button
+    backgroundColor: "#9C27B0",
     marginTop: 16,
   },
   buttonDisabled: {
