@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   StyleSheet,
   Text,
@@ -31,14 +31,17 @@ import { useNavigation } from "@react-navigation/native";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 import * as FileSystem from "expo-file-system";
+import { auth, db } from "../firebaseConfig"; // Adjust path as needed
+import { doc, getDoc } from "firebase/firestore";
 
 // Replace with your computer's IP
-const API_URL = "http://192.168.8.158:8009/predict";
+const API_URL = "http://172.20.10.2:8009/predict";
 
 export default function UploadScreen() {
   const [image, setImage] = useState(null);
   const [prediction, setPrediction] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [username, setUsername] = useState("User123"); // Default placeholder
   const { width } = useWindowDimensions();
   const navigation = useNavigation();
 
@@ -52,6 +55,28 @@ export default function UploadScreen() {
     "Poppins-Regular": Poppins_400Regular,
     "Poppins-SemiBold": Poppins_600SemiBold,
   });
+
+  // Fetch username from Firestore on component mount
+  useEffect(() => {
+    const fetchUsername = async () => {
+      try {
+        const user = auth.currentUser;
+        if (user) {
+          const userDoc = await getDoc(doc(db, "users", user.uid));
+          if (userDoc.exists()) {
+            setUsername(userDoc.data().username || "User123");
+          } else {
+            console.log("No user document found in Firestore");
+          }
+        } else {
+          console.log("No user is currently signed in");
+        }
+      } catch (error) {
+        console.error("Error fetching username:", error);
+      }
+    };
+    fetchUsername();
+  }, []);
 
   const requestPermission = async () => {
     try {
@@ -180,53 +205,265 @@ export default function UploadScreen() {
       }
     }
 
+    // Get the current date and time for the report
+    const currentDate = new Date().toLocaleString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
     const htmlContent = `
       <html>
         <head>
           <style>
-            body { font-family: Arial, sans-serif; padding: 20px; color: #333; }
-            h1 { text-align: center; color: #2c3e50; }
-            h2 { color: #34495e; }
-            h3 { text-align: center; color: #7f8c8d; font-size: 16px; margin-bottom: 10px; }
-            p { margin: 10px 0; }
-            ul { list-style-type: disc; margin-left: 20px; }
-            .section { margin-bottom: 20px; }
-            .image-section { text-align: center; margin-bottom: 20px; }
-            img { max-width: 100%; height: auto; max-height: 300px; }
+            body {
+              font-family: 'Helvetica', Arial, sans-serif;
+              margin: 0;
+              padding: 0;
+              color: #333;
+              background-color: #f4f4f4;
+              position: relative;
+            }
+            .page {
+              width: 210mm;
+              min-height: 297mm;
+              padding: 20mm;
+              margin: 0 auto;
+              background: #ffffff;
+              box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+              position: relative;
+              box-sizing: border-box;
+            }
+            .cover-page {
+              text-align: center;
+              padding-top: 50mm;
+              background: linear-gradient(to bottom, #e8f5e9, #ffffff);
+              height: 297mm;
+              display: flex;
+              flex-direction: column;
+              justify-content: center;
+              position: relative;
+            }
+            .cover-title {
+              font-size: 36pt;
+              color: #2e7d32;
+              font-weight: bold;
+              margin-bottom: 10mm;
+            }
+            .cover-subtitle {
+              font-size: 18pt;
+              color: #4CAF50;
+              margin-bottom: 5mm;
+            }
+            .cover-date {
+              font-size: 12pt;
+              color: #666;
+              margin-bottom: 20mm;
+            }
+            .cover-generated-by {
+              font-size: 12pt;
+              color: #666;
+            }
+            .content-page {
+              padding-top: 20mm;
+            }
+            .header {
+              text-align: center;
+              border-bottom: 2px solid #4CAF50;
+              padding-bottom: 5mm;
+              margin-bottom: 10mm;
+            }
+            h1 {
+              font-size: 24pt;
+              color: #2e7d32;
+              margin: 0;
+            }
+            h2 {
+              font-size: 18pt;
+              color: #388E3C;
+              margin-top: 10mm;
+              margin-bottom: 5mm;
+              border-left: 4px solid #4CAF50;
+              padding-left: 5mm;
+            }
+            h3 {
+              font-size: 14pt;
+              color: #555;
+              margin-bottom: 5mm;
+            }
+            p {
+              font-size: 12pt;
+              line-height: 1.5;
+              margin: 5mm 0;
+            }
+            .summary {
+              background-color: #e8f5e9;
+              padding: 10mm;
+              border-radius: 5mm;
+              margin-bottom: 10mm;
+            }
+            .table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-bottom: 10mm;
+            }
+            .table th, .table td {
+              border: 1px solid #ddd;
+              padding: 3mm;
+              font-size: 12pt;
+              text-align: left;
+            }
+            .table th {
+              background-color: #4CAF50;
+              color: #ffffff;
+              font-weight: bold;
+            }
+            .table td {
+              background-color: #fafafa;
+            }
+            .image-section {
+              text-align: center;
+              margin: 10mm 0;
+            }
+            .image-container {
+              border: 2px solid #4CAF50;
+              border-radius: 5mm;
+              padding: 5mm;
+              display: inline-block;
+              background-color: #ffffff;
+            }
+            img {
+              max-width: 100%;
+              max-height: 80mm;
+              border-radius: 3mm;
+            }
+            .image-caption {
+              font-size: 10pt;
+              color: #666;
+              margin-top: 2mm;
+            }
+            ul {
+              list-style-type: disc;
+              margin-left: 10mm;
+              padding-left: 5mm;
+              font-size: 12pt;
+            }
+            li {
+              margin-bottom: 3mm;
+            }
+            .footer {
+              position: absolute;
+              bottom: 10mm;
+              left: 20mm;
+              right: 20mm;
+              text-align: center;
+              font-size: 10pt;
+              color: #666;
+              border-top: 1px solid #ddd;
+              padding-top: 2mm;
+            }
+            .watermark {
+              position: absolute;
+              top: 50%;
+              left: 50%;
+              transform: translate(-50%, -50%) rotate(-45deg);
+              font-size: 48pt;
+              color: rgba(0, 0, 0, 0.1);
+              pointer-events: none;
+            }
+            .notes-section {
+              background-color: #fff3e0;
+              padding: 10mm;
+              border-radius: 5mm;
+              margin-top: 10mm;
+            }
           </style>
         </head>
         <body>
-          <h1>PlantGuard</h1>
-          <center><h2>Plant Disease Analysis Report</h2></center>
-          ${
-            imageBase64
-              ? `
-          <div class="image-section">
-            <h3>Uploaded Image</h3>
-            <img src="${imageBase64}" alt="Uploaded Plant Image" />
+          <!-- Cover Page -->
+          <div class="page cover-page">
+            <div class="watermark">PlantGuard</div>
+            <h1 class="cover-title">Plant Disease Analysis Report</h1>
+            <p class="cover-subtitle">Powered by PlantGuard</p>
+            <p class="cover-date">Generated on: ${currentDate}</p>
+            <p class="cover-generated-by">Generated by: ${username}</p>
           </div>
-          `
-              : ""
-          }
-          <div class="section">
-            <h2>Disease</h2>
-            <p>${prediction.class}</p>
-          </div>
-          <div class="section">
-            <h2>Confidence</h2>
-            <p>${(prediction.confidence * 100).toFixed(2)}%</p>
-          </div>
-          <div class="section">
+
+          <!-- Content Page -->
+          <div class="page content-page">
+            <div class="header">
+              <h1>Plant Disease Analysis Report</h1>
+            </div>
+
+            <!-- Summary Section -->
+            <div class="summary">
+              <h2>Summary</h2>
+              <p>
+                This report provides a detailed analysis of the plant image submitted for disease detection.
+                The analysis identified <strong>${
+                  prediction.class
+                }</strong> with a confidence of
+                <strong>${(prediction.confidence * 100).toFixed(2)}%</strong>.
+                Below are the detailed findings, including disease information and recommended treatments.
+              </p>
+            </div>
+
+            <!-- Key Metrics Table -->
+            <h2>Key Findings</h2>
+            <table class="table">
+              <tr>
+                <th>Disease</th>
+                <td>${prediction.class}</td>
+              </tr>
+              <tr>
+                <th>Confidence</th>
+                <td>${(prediction.confidence * 100).toFixed(2)}%</td>
+              </tr>
+            </table>
+
+            <!-- Uploaded Image -->
+            ${
+              imageBase64
+                ? `
+            <div class="image-section">
+              <div class="image-container">
+                <img src="${imageBase64}" alt="Uploaded Plant Image" />
+                <p class="image-caption">Uploaded Plant Image</p>
+              </div>
+            </div>
+            `
+                : ""
+            }
+
+            <!-- Disease Information -->
             <h2>Disease Information</h2>
             <p>${prediction.disease_info}</p>
-          </div>
-          <div class="section">
-            <h2>Treatments</h2>
+
+            <!-- Treatments -->
+            <h2>Recommended Treatments</h2>
             <ul>
               ${prediction.treatments
                 .map((treatment) => `<li>${treatment}</li>`)
                 .join("")}
             </ul>
+
+            <!-- Additional Notes -->
+            <div class="notes-section">
+              <h2>Additional Notes</h2>
+              <p>
+                - Monitor the plant regularly for any changes in symptoms.<br/>
+                - Ensure proper environmental conditions (e.g., humidity, sunlight) to prevent further disease spread.<br/>
+                - Consult with a local agricultural expert for severe cases or if treatments are ineffective.
+              </p>
+            </div>
+
+            <!-- Footer -->
+            <div class="footer">
+              PlantGuard © ${new Date().getFullYear()} | Page 1
+            </div>
           </div>
         </body>
       </html>
