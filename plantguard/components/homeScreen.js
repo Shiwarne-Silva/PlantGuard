@@ -224,11 +224,11 @@ const styles = StyleSheet.create({
     opacity: 0.8,
   },
   loginButton: {
-    width: 95,
+    width: 100,
     backgroundColor: "rgba(76, 175, 80, 0.6)",
   },
   signupButton: {
-    width: 95,
+    width: 106,
     backgroundColor: "rgba(76, 175, 80, 0.6)",
   },
   authButtonText: {
@@ -283,7 +283,7 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 8,
     marginVertical: 10,
-    marginTop: 70,
+    marginTop: 90,
   },
   logoutButtonText: {
     color: "#ffffff",
